@@ -14,6 +14,13 @@ void main(){
 	//{
 	//	texColor -= blue;
 	//}
+
+	float d = distance(vec2(gl_FragCoord), vec2(640, 480)); // Calculate a distance
+	texColor += (1 - (d / 1280)) * vec3(0.65, 0.4, 0.0); // Compute a color based on distance
+	clamp(texColor, 0.0, 1.0);
+
+
+
 	color = vec4(texColor, 1.0);
 
 }
