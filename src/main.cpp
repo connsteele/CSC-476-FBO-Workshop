@@ -479,6 +479,13 @@ void Blur(GLuint inTex) { // Draws a textured quad of the rendered scene
   }
 
   /* TODO - add code so that you can call the blur as much as needed */
+  for (int i = 0; i < 17; i++)
+  {
+	  glBindFramebuffer(GL_FRAMEBUFFER, frameBuf[(i + 1) % 2]);
+	  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	  Blur(texBuf[i % 2]);
+   }
+
 
   /* now draw the actual output  to the default framebuffer - ie display */ 
   /* note the current base code is just using one FBO and texture */
