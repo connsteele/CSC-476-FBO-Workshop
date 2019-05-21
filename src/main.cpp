@@ -55,8 +55,8 @@ public:
 	int FirstTime = 1;
 
   //global reference to texture FBO
-  GLuint frameBuf[2];
-  GLuint texBuf[2];
+  GLuint frameBuf[2]; // Used as output
+  GLuint texBuf[2]; // Used as input
   GLuint depthBuf;
 
 	float g_Camtrans = -2.5;
@@ -279,8 +279,8 @@ void createFBO(GLuint& fb, GLuint& tex) {
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // changed from clamp to repeat
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // changed from clamp to repeat
 
    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 
@@ -305,7 +305,7 @@ void createFBO(GLuint& fb, GLuint& tex) {
 	 // Enable z-buffer test.
   	glEnable(GL_DEPTH_TEST);
 
-	   // Initialize the GLSL program to render the obj
+	// Initialize the GLSL program to render the obj
     prog = make_shared<Program>();
     prog->setVerbose(true);
     prog->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/simple_frag.glsl");
@@ -327,6 +327,7 @@ void createFBO(GLuint& fb, GLuint& tex) {
     tex_prog->init();
     tex_prog->addUniform("texBuf");
     tex_prog->addAttribute("vertPos");
+	tex_prog->addUniform("time");
 
 
     //create two frame buffer objects to toggle between
@@ -394,12 +395,13 @@ void createFBO(GLuint& fb, GLuint& tex) {
 
 /* To call the blur on the specificed texture */
 /* TODO: fill in with call to appropriate shader(s) to complete the blur  */
-void Blur(GLuint inTex) {
+void Blur(GLuint inTex) { // Draws a textured quad of the rendered scene
    glActiveTexture(GL_TEXTURE0);
-   glBindTexture(GL_TEXTURE_2D, inTex);
+   glBindTexture(GL_TEXTURE_2D, inTex); // Bind the texture of the scene that was rendered into memory
    
   // example applying of 'drawing' the FBO texture
    tex_prog->bind();
+   glUniform1f(tex_prog->getUniform("time"), glfwGetTime());
    glUniform1i(tex_prog->getUniform("texBuf"), 0);
    glEnableVertexAttribArray(0);
    glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
@@ -444,7 +446,8 @@ void Blur(GLuint inTex) {
   }
 
 /* let's draw */
-  void render() {
+  // This is a two pass render
+  void render() { // This code will draw the scene then render it to a texture
 
 	// Get current frame buffer size.
   int width, height;
@@ -452,7 +455,7 @@ void Blur(GLuint inTex) {
 
   glViewport(0, 0, width, height);
   //set up to render to buffer
-  glBindFramebuffer(GL_FRAMEBUFFER, frameBuf[0]);
+  glBindFramebuffer(GL_FRAMEBUFFER, frameBuf[0]); // Will draw scene into memory
   // Clear framebuffer.
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -465,8 +468,8 @@ void Blur(GLuint inTex) {
   		drawScene(prog);
   prog->unbind();
   	
-      //regardless unbind the FBO 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  //regardless unbind the FBO 
+  glBindFramebuffer(GL_FRAMEBUFFER, 0); // Draw to screen
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   /* code to write out the FBO (texture) just once */
@@ -501,7 +504,7 @@ Application *application = new Application();
 	// and GL context, etc.
 
 	WindowManager *windowManager = new WindowManager();
-	windowManager->init(640, 480);
+	windowManager->init(1280, 960); // was 640, 480
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 
